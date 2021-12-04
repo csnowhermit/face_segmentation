@@ -1,9 +1,11 @@
 import os
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 import config
 from utils import ext_transformer as et
+from utils import scheduler as scheduler
 from dataset import split_dataset, HelenFace
 from model import load_model
 
@@ -35,3 +37,21 @@ if __name__ == '__main__':
 
     # 这里使用resnet50+deeplabv3+
     model = load_model('resnet50')
+
+    # backbone bn层设置动量
+    for m in model.backbone.modules():
+        if isinstance(m, nn.BatchNorm2d):
+            m.momentum = 0.01
+    # 设置优化器
+    optimizer = torch.optim.SGD(params=[
+        {'params': model.backbone.parameters(), 'lr': 0.1 * config.learning_rate},
+        {'params': model.classifier.parameters(), 'lr': config.learning_rate}
+    ], lr=config.learning_rate, momentum=0.9, weight_decay=config.weight_decay)
+
+    # 设置scheduler
+    scheduler = scheduler.PolyLR(optimizer, config.total_epochs, power=0.9)
+
+    # 设置损失函数：本质上是分类问题，用交叉熵损失函数
+    criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='mean')
+
+

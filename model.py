@@ -11,7 +11,7 @@ import config
 '''
 def load_model(backbone):
     if backbone == 'resnet50':
-        model = segment_resnet(num_classes=config.num_classes, output_stride=8)
+        model = segment_resnet(num_classes=config.num_classes, output_stride=16)
     else:
         raise NotImplementedError
     return model
