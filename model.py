@@ -9,9 +9,9 @@ import config
 '''
     指定backbone，加载模型
 '''
-def load_model(backbone):
+def load_model(backbone, num_classes, output_stride):
     if backbone == 'resnet50':
-        model = segment_resnet(num_classes=config.num_classes, output_stride=16)
+        model = segment_resnet(num_classes=num_classes, output_stride=output_stride)
     else:
         raise NotImplementedError
     return model
@@ -380,7 +380,7 @@ class Simple_Segmentation_Model(nn.Module):
         return x
 
 if __name__ == '__main__':
-    model = load_model('resnet50')
+    model = load_model('resnet50', num_classes=config.num_classes, output_stride=config.output_stride)
     # print(model)
     input = torch.randn((1, 3, 513, 513))
     output = model(input)
