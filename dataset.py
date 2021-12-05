@@ -20,12 +20,14 @@ class HelenFace(Dataset):
     def __init__(self, imglist, transform):
         self.transform = transform
         self.imglist = imglist    # 这里图像列表已经是全路径了
-        self.annolist = [file.replace('helen', 'labels') for file in imglist]
+        self.annolist = [file.replace('images', 'labels').replace('.jpg', '.png') for file in imglist]
+        assert (len(self.imglist) == len(self.annolist))
 
 
     def __getitem__(self, index):
         img = Image.open(self.imglist[index]).convert("RGB")
-        label = Image.open(self.annolist[index]).convert("RGB")
+        # label = Image.open(self.annolist[index]).convert("RGB")
+        label = Image.open(self.annolist[index])    # Image.open()读取.png图会直接读成灰度图
 
         return self.transform(img, label)
 

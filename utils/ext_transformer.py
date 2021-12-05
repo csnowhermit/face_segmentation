@@ -2,7 +2,7 @@ import random
 import numbers
 import numpy as np
 import torch
-import torch.nn.functional as F
+import torchvision.transforms.functional as F
 from PIL import Image
 
 '''

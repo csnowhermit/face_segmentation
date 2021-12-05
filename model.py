@@ -32,8 +32,8 @@ def segment_resnet(num_classes, output_stride):
         replace_stride_with_dilation = [False, False, True]
         aspp_dilate = [6, 12, 18]
 
-    # 加载backbone
-    backbone = ResNet50(Bottleneck, [3, 4, 6, 3], num_classes=config.num_classes, replace_stride_with_dilation=replace_stride_with_dilation)
+    # 加载backbone（这里resnet50最后两层仅为了加载预训练模型，需设置num_classes为1000）
+    backbone = ResNet50(Bottleneck, [3, 4, 6, 3], num_classes=1000, replace_stride_with_dilation=replace_stride_with_dilation)
     if config.pretrained:
         state_dict = load_state_dict_from_url(config.model_urls, progress=config.progress)
         backbone.load_state_dict(state_dict)
@@ -41,14 +41,15 @@ def segment_resnet(num_classes, output_stride):
     inplanes = 2048
     low_level_planes = 256
 
-    return_layers = {'layer4': 'out', 'layer1': 'low_level'}  #
+    return_layers = {'layer4': 'out', 'layer1': 'low_level'}    # layer4作为resnet的最后输出，作为encoder端ASPP结构的输入；layer1作为低等级特征，直接输入到decoder端
     classifier = DeepLabHeadV3Plus(inplanes, low_level_planes, num_classes, aspp_dilate)
 
     # 提取网络的第几层输出结果并给一个别名
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     # 组装成完整的分割模型
-    model = Simple_Segmentation_Model(backbone, classifier)
+    # model = Simple_Segmentation_Model(backbone, classifier)
+    model = FaceSegmentation(backbone, classifier)
     return model
 
 
@@ -379,9 +380,14 @@ class Simple_Segmentation_Model(nn.Module):
         x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
         return x
 
+class FaceSegmentation(Simple_Segmentation_Model):
+    pass
+
 if __name__ == '__main__':
     model = load_model('resnet50', num_classes=config.num_classes, output_stride=config.output_stride)
+    model = model.to(config.device)
     # print(model)
-    input = torch.randn((1, 3, 513, 513))
+    input = torch.randn([16, 3, 513, 513])
     output = model(input)
-    print(output.shape)
+    print(output.shape)    # torch.Size([16, 10, 513, 513])
+
