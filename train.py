@@ -1,10 +1,12 @@
 import os
 import numpy as np
-from tqdm import tqdm
+from PIL import Image
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from torchvision import transforms as T
+import torchvision.utils as vutils
 
 import config
 from utils import ext_transformer as et
@@ -40,7 +42,18 @@ if __name__ == '__main__':
     val_dataloader = DataLoader(val_dataset, batch_size=config.val_batch_size, shuffle=True)
 
     # 这里使用resnet50+deeplabv3+
-    model = load_model('resnet50', num_classes=config.num_classes, output_stride=config.output_stride)
+    # model = load_model('resnet50', num_classes=config.num_classes, output_stride=config.output_stride)
+    model = load_model('resnet50', num_classes=21, output_stride=config.output_stride)
+
+
+    # # 先获取模型最后两层的shape
+    # last_weight_shape, last_bias_shape = None, None
+    # for name, param in model.classifier.named_parameters():
+    #     if name == 'classifier.3.weight':
+    #         last_weight_shape = param.shape
+    #     elif name == 'classifier.3.bias':
+    #         last_bias_shape = param.shape
+    # print("last_layer:", last_weight_shape, last_bias_shape)
 
     # backbone bn层设置动量
     for m in model.backbone.modules():
@@ -63,16 +76,23 @@ if __name__ == '__main__':
     # best_score = 0.0    # 以验证集的score算
     if len(config.pretrained_model) > 0 and os.path.isfile(config.pretrained_model):
         checkpoint = torch.load(config.pretrained_model, map_location=config.device)
+
+        # # 重新设置预训练模型最后两层的shape
+        # checkpoint["model_state"]['classifier.classifier.3.weight'] = torch.randn(last_weight_shape, dtype=torch.float32)
+        # checkpoint["model_state"]['classifier.classifier.3.bias'] = torch.randn(last_bias_shape, dtype=torch.float32)
+
         model.load_state_dict(checkpoint["model_state"])
-        model = nn.DataParallel(model)
+        model.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)    # 加载上预训练模型后再修改最后一层
+        if config.use_gpu and config.num_gpu > 1:  # 允许使用GPU，才能使用多卡训练
+            model = nn.DataParallel(model)
         model.to(config.device)
         if config.continue_training:
-            optimizer.load_state_dict(checkpoint["optimizer_state"])
+            optimizer.load_state_dict(checkpoint["optimizer_state"])    # num_classes改变后不能接着上次训练
             scheduler.load_state_dict(checkpoint["scheduler_state"])
             curr_epoch = checkpoint["cur_itrs"]
             # best_score = checkpoint['best_score']
-            print("Training state restored from %s" % config.pretrained_model)
-        print("Model restored from %s" % config.pretrained_model)
+            print("Training state loaded from %s" % config.pretrained_model)
+        print("Load pretrained model from %s" % config.pretrained_model)
         del checkpoint
     else:
         print("[!] Retrain")
@@ -99,6 +119,7 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             output = model(images)    # [16, num_classes, 513, 513]
             loss = criterion(output.view(-1, config.num_classes, config.resize * config.resize), labels)
+            print("Epoch: %d, Batch: %d, train_loss: %.6f" % (epoch, i, loss))
             loss.backward()
             optimizer.step()
             break
@@ -118,6 +139,7 @@ if __name__ == '__main__':
                 images = images.to(config.device, dtype=torch.float32)  # [16, 3, 513, 513]
 
                 # eval时按图像本身大小算
+                label_copy = labels.clone()
                 labels = labels.view(-1, h * w)  # labels改变维度，变为[batch_size, 513 * 513]
                 labels = labels.to(config.device, dtype=torch.long)  # [batch_size, 513 * 513]
 
@@ -126,10 +148,40 @@ if __name__ == '__main__':
                 eval_losses.append(loss.detach().cpu().numpy())
 
                 if i < config.val_preview_num:    # 保存前val_preview_num张图像供预览
-                    print("这里保存下eval的效果")
+                    outputs = preds.max(1)[1][0]
+
+                    # 调色板
+                    palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
+                    colors = torch.as_tensor([i for i in range(config.num_classes)])[:, None] * palette
+                    colors = (colors % 255).numpy().astype("uint8")
+
+                    # 给推理结果上色
+                    r_output = Image.fromarray(outputs.byte().cpu().numpy()).resize((w, h))    # resize时应该写wh
+                    r_output.putpalette(colors)
+                    r_output = r_output.convert('RGB')
+                    # print(type(r_output), np.array(r_output).shape)
+                    # r.show()
+
+                    # 给label上色
+                    r_label = Image.fromarray(label_copy[0].byte().cpu().numpy()).resize((w, h))
+                    r_label.putpalette(colors)
+                    r_label = r_label.convert('RGB')
+                    # print(type(r_label), np.array(r_label).shape)
+
+
+                    # 横向拼接：原图，标签，推理结果
+                    show_img_list = [images[0] * 255., T.PILToTensor()(r_label), T.PILToTensor()(r_output)]
+
+                    label_show = vutils.make_grid(show_img_list, nrow=1, padding=2, normalize=True).cpu()
+
+                    if os.path.exists(config.val_results_path) is False:
+                        os.makedirs(config.val_results_path)
+
+                    vutils.save_image(label_show, os.path.join(config.val_results_path, "eval_%d.png" % i))
 
         # 保存模型
         curr_eval_loss = np.mean(eval_losses)
+        print("Epoch: %d, Batch: %d, train_loss: %.6f, eval_loss: %.6f" % (epoch, len(train_dataloader), curr_train_loss, curr_eval_loss))
         if curr_eval_loss < eval_loss:
             eval_loss = curr_eval_loss
 

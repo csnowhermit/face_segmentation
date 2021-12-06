@@ -10,8 +10,8 @@ img_path = "E:/dataset/helen_face/images/"
 anno_path = "E:/dataset/helen_face/labels/"
 resize = 513
 
-pretrained_model = ""
-use_gpu = True    # 设置是否使用GPU
+pretrained_model = "./checkpoint/best_deeplabv3plus_resnet50_voc_os16.pth"
+use_gpu = False    # 设置是否使用GPU
 device = torch.device('cuda:0' if torch.cuda.is_available() and use_gpu else 'cpu')
 num_gpu = 1    # GPU个数
 random_seed = 1
