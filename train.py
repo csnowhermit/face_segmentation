@@ -122,7 +122,6 @@ if __name__ == '__main__':
             print("Epoch: %d, Batch: %d, train_loss: %.6f" % (epoch, i, loss))
             loss.backward()
             optimizer.step()
-            break
 
         curr_train_loss = loss.detach().cpu().numpy()
         # 按训练集loss的更新保存
