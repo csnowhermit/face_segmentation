@@ -40,7 +40,8 @@ for annodir in os.listdir(base_path):
         img = cv2.imread(os.path.join(annopath, filename))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        img = np.where(img>0, num, 0)
+        # img = np.where(img>0, num, 0)
+        img = np.where(img>=127.5, num, 0)    # 这里涉及到灰度图转二值图
         num += 1
         res.append(img)
 
