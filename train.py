@@ -82,7 +82,6 @@ if __name__ == '__main__':
         # checkpoint["model_state"]['classifier.classifier.3.bias'] = torch.randn(last_bias_shape, dtype=torch.float32)
 
         model.load_state_dict(checkpoint["model_state"])
-        model.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)    # 加载上预训练模型后再修改最后一层
         if config.use_gpu and config.num_gpu > 1:  # 允许使用GPU，才能使用多卡训练
             model = nn.DataParallel(model)
         model.to(config.device)
@@ -99,6 +98,8 @@ if __name__ == '__main__':
         if config.use_gpu and config.num_gpu > 1:    # 允许使用GPU，才能使用多卡训练
             model = nn.DataParallel(model)
         model.to(config.device)
+
+    model.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)  # 加载上预训练模型后再修改最后一层
 
     if os.path.exists("./checkpoint/") is False:
         os.makedirs("./checkpoint/")

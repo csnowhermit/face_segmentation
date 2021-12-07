@@ -21,7 +21,7 @@ import numpy as np
 #     10: 'hair'
 # }
 
-base_path = "E:/dataset/SmithCVPR2013_dataset_original/labels/"
+base_path = "E:/dataset/helen_face_origin_labels/labels/"
 
 for annodir in os.listdir(base_path):
     annopath = os.path.join(base_path, annodir)
