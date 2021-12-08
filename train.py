@@ -41,19 +41,11 @@ if __name__ == '__main__':
     train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=config.val_batch_size, shuffle=True)
 
-    # 这里使用resnet50+deeplabv3+
-    # model = load_model('resnet50', num_classes=config.num_classes, output_stride=config.output_stride)
-    model = load_model('resnet50', num_classes=21, output_stride=config.output_stride)
-
-
-    # # 先获取模型最后两层的shape
-    # last_weight_shape, last_bias_shape = None, None
-    # for name, param in model.classifier.named_parameters():
-    #     if name == 'classifier.3.weight':
-    #         last_weight_shape = param.shape
-    #     elif name == 'classifier.3.bias':
-    #         last_bias_shape = param.shape
-    # print("last_layer:", last_weight_shape, last_bias_shape)
+    # 这里使用backbone+deeplabv3+
+    if config.backbone == 'resnet50':
+        model = load_model('resnet50', num_classes=21, output_stride=config.output_stride)
+    else:
+        model = load_model('mobilenetv2', num_classes=21, output_stride=config.output_stride)
 
     # backbone bn层设置动量
     for m in model.backbone.modules():
@@ -76,10 +68,6 @@ if __name__ == '__main__':
     # best_score = 0.0    # 以验证集的score算
     if len(config.pretrained_model) > 0 and os.path.isfile(config.pretrained_model):
         checkpoint = torch.load(config.pretrained_model, map_location=config.device)
-
-        # # 重新设置预训练模型最后两层的shape
-        # checkpoint["model_state"]['classifier.classifier.3.weight'] = torch.randn(last_weight_shape, dtype=torch.float32)
-        # checkpoint["model_state"]['classifier.classifier.3.bias'] = torch.randn(last_bias_shape, dtype=torch.float32)
 
         model.load_state_dict(checkpoint["model_state"])
         if config.use_gpu and config.num_gpu > 1:  # 允许使用GPU，才能使用多卡训练

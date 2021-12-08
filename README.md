@@ -1,10 +1,24 @@
 # face_segmentation
 
-采用deeplabv3+实现人脸语义分割
+采用deeplabv3plus实现人脸语义分割
 
 ## 1、模型
 
-​	采用resnet50作为backbone，deeplabv3plus实现。
+​	backbone支持resnet50和mobilenetv2两种，配置方式如下：
+
+``` python
+# config.py
+
+# 设置backbone
+backbone = "mobilenetv2"    # backbone，可选resnet50 或 mobilenetv2
+# pretrained_model = ""    # 预训练模型设为空，表示从头开始训练
+# pretrained_model = "./checkpoint/best_deeplabv3plus_resnet50_voc_os16.pth"    # backbone为resnet50的预训练模型
+pretrained_model = "./checkpoint/best_deeplabv3plus_mobilenet_voc_os16.pth"    # backbone为mobilenetv2的预训练模型
+
+# backbone的预训练模型
+# model_urls = "https://download.pytorch.org/models/resnet50-19c8e357.pth"    # resnet
+model_urls = "https://download.pytorch.org/models/mobilenet_v2-b0353104.pth"    # mobilenetv2
+```
 
 ## 2、数据集
 
@@ -26,7 +40,7 @@ face_seg_label = {
 }
 ```
 
-​	实际上不考虑牙齿和头发，所以共分类9类别，新的对应关系如下：
+​	实际上不考虑牙齿和头发，所以共分为9类，新的对应关系如下：
 
 ``` python
 face_seg_label = {

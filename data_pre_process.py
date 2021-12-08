@@ -8,7 +8,7 @@ import numpy as np
 '''
 
 # face_seg_label = {
-#     0: "background",
+#     0: "total_area",
 #     1: "face",
 #     2: "right eyebrow",
 #     3: "left eyebrow",
@@ -21,7 +21,7 @@ import numpy as np
 #     10: 'hair'
 # }
 
-base_path = "E:/dataset/helen_face_origin_labels/labels/"
+base_path = "F:/dataset/SmithCVPR2013_dataset_original/labels/"
 
 for annodir in os.listdir(base_path):
     annopath = os.path.join(base_path, annodir)
@@ -41,7 +41,7 @@ for annodir in os.listdir(base_path):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # img = np.where(img>0, num, 0)
-        img = np.where(img>=127.5, num, 0)    # 这里涉及到灰度图转二值图
+        img = np.where(img>=210, num, 0)
         num += 1
         res.append(img)
 
@@ -60,5 +60,8 @@ for annodir in os.listdir(base_path):
     print(type(res), res.shape)
 
     res = res.reshape(h, w, 1)
-    cv2.imwrite(os.path.join("E:/dataset/helen_face/labels/", "%s.png" % annodir), res)
+    cv2.imwrite(os.path.join("F:/dataset/helen_face/labels/", "%s.png" % annodir), res)
+
+
+
 
