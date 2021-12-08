@@ -27,7 +27,7 @@ class HelenFace(Dataset):
     def __getitem__(self, index):
         img = Image.open(self.imglist[index]).convert("RGB")
         # label = Image.open(self.annolist[index]).convert("RGB")
-        label = Image.open(self.annolist[index])    # Image.open()读取.png图会直接读成灰度图
+        label = Image.open(self.annolist[index])
 
         return self.transform(img, label)
 
