@@ -159,9 +159,8 @@ if __name__ == '__main__':
                     r_label = r_label.convert('RGB')
                     # print(type(r_label), np.array(r_label).shape)
 
-
-                    # 横向拼接：原图，标签，推理结果
-                    show_img_list = [images[0] * 255., T.PILToTensor()(r_label), T.PILToTensor()(r_output)]
+                    # 拼接：原图，标签，推理结果
+                    show_img_list = [images.detach().cpu().numpy()[0] * 255., T.PILToTensor()(r_label), T.PILToTensor()(r_output)]
 
                     label_show = vutils.make_grid(show_img_list, nrow=1, padding=2, normalize=True).cpu()
 
@@ -178,7 +177,7 @@ if __name__ == '__main__':
 
             torch.save({
                 "cur_itrs": epoch,
-                "model_state": model.module.state_dict() if config.use_gpu else model.state_dict(),
+                "model_state": model.module.state_dict() if config.use_gpu and config.num_gpu > 1 else model.state_dict(),    # 多GPU才有model.nodule结构
                 "optimizer_state": optimizer.state_dict(),
                 "scheduler_state": scheduler.state_dict(),
                 "best_score": 0.0
