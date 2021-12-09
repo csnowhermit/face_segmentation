@@ -95,6 +95,9 @@ if __name__ == '__main__':
     train_loss = 99999  # 记录当前train loss
     eval_loss = 99999  # 记录当前eval loss
 
+    if config.use_gpu and torch.cuda.is_available():
+        model.cuda()    # 手动将model放到cuda上
+
     # 开始训练
     for epoch in range(curr_epoch, config.total_epochs):
         model.train()

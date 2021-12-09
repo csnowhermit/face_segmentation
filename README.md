@@ -2,11 +2,6 @@
 
 采用deeplabv3plus实现人脸语义分割
 
-## 0、deeplabv3plus网络结构
-
-<div align='center'>
-  <img src='./assets/nn_structure.png'>
-</div>
 
 ## 1、模型
 
