@@ -5,7 +5,7 @@ import torch
 '''
 
 # 数据集相关
-num_classes = 9
+num_classes = 21
 img_path = "F:/dataset/helen_face/images/"
 anno_path = "F:/dataset/helen_face/labels/"
 resize = 513
@@ -29,7 +29,7 @@ pretrained = True
 progress = True
 
 # 设置backbone
-backbone = "mobilenetv2"    # backbone，可选resnet50 或 mobilenetv2
+backbone = "mobilenetv2"    # backbone，可选 resnet50 或 mobilenetv2
 # pretrained_model = ""    # 预训练模型设为空，表示从头开始训练
 # pretrained_model = "./checkpoint/best_deeplabv3plus_resnet50_voc_os16.pth"    # backbone为resnet50的预训练模型
 pretrained_model = "./checkpoint/best_deeplabv3plus_mobilenet_voc_os16.pth"    # backbone为mobilenetv2的预训练模型
@@ -38,3 +38,5 @@ pretrained_model = "./checkpoint/best_deeplabv3plus_mobilenet_voc_os16.pth"    #
 # model_urls = "https://download.pytorch.org/models/resnet50-19c8e357.pth"    # resnet
 model_urls = "https://download.pytorch.org/models/mobilenet_v2-b0353104.pth"    # mobilenetv2
 
+# 推理过程
+inference_imgpath = "F:/dataset/helen_face/inference"

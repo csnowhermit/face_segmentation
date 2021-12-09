@@ -43,9 +43,9 @@ if __name__ == '__main__':
 
     # 这里使用backbone+deeplabv3+
     if config.backbone == 'resnet50':
-        model = load_model('resnet50', num_classes=21, output_stride=config.output_stride)
+        model = load_model('resnet50', num_classes=9, output_stride=config.output_stride)
     else:
-        model = load_model('mobilenetv2', num_classes=21, output_stride=config.output_stride)
+        model = load_model('mobilenetv2', num_classes=9, output_stride=config.output_stride)
 
     # backbone bn层设置动量
     for m in model.backbone.modules():

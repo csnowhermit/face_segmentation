@@ -38,6 +38,7 @@ def segment_resnet(num_classes, output_stride):
     if config.pretrained:
         state_dict = load_state_dict_from_url(config.model_urls, progress=config.progress)
         backbone.load_state_dict(state_dict)
+        del state_dict
 
     inplanes = 2048
     low_level_planes = 256
@@ -69,6 +70,7 @@ def segment_mobilenetv2(num_classes, output_stride):
     if config.pretrained:
         state_dict = load_state_dict_from_url(config.model_urls, progress=config.progress)
         backbone.load_state_dict(state_dict)
+        del state_dict
 
     # 将backbone的特征分为高阶特征和低阶特征
     backbone.low_level_features = backbone.features[0:4]    # 倒数第四层之前的全为低等级特征
