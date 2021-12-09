@@ -120,11 +120,11 @@ if __name__ == '__main__':
         eval_losses = []
         model.eval()
         with torch.no_grad():
-            for i, batch in enumerate(val_dataloader):  # 批量加载数据训练
+            for i, batch in enumerate(val_dataloader):
                 images, labels = batch[:]
                 h, w = images.shape[2], images.shape[3]
                 # print(i, h, w)
-                images = images.to(config.device, dtype=torch.float32)  # [16, 3, 513, 513]
+                images = images.to(config.device, dtype=torch.float32)  # BCHW
 
                 # eval时按图像本身大小算
                 label_copy = labels.clone()
@@ -165,7 +165,7 @@ if __name__ == '__main__':
                     if os.path.exists(config.val_results_path) is False:
                         os.makedirs(config.val_results_path)
 
-                    vutils.save_image(label_show, os.path.join(config.val_results_path, "eval_%d.png" % i))
+                    vutils.save_image(label_show, os.path.join(config.val_results_path, "eval_%d_%d.png" % (epoch, i)))
 
         # 保存模型
         curr_eval_loss = np.mean(eval_losses)
