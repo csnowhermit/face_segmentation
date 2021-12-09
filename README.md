@@ -4,7 +4,9 @@
 
 ## 0、deeplabv3plus网络结构
 
-![avatar](./assets/nn_structure.png)
+<div align='center'>
+  <img src='./assets/nn_structure.png'>
+</div>
 
 ## 1、模型
 
