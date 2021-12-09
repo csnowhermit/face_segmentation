@@ -2,6 +2,10 @@
 
 采用deeplabv3plus实现人脸语义分割
 
+## 0、deeplabv3plus网络结构
+
+![avatar](./assets/nn_structure.png)
+
 ## 1、模型
 
 ​	backbone支持resnet50和mobilenetv2两种，配置方式如下：
