@@ -44,7 +44,8 @@ class eval_metrics(object):
 
         # 4.标签中每种类别像素点占比
         freq = hist.sum(axis=1) / hist.sum()    # [1, num_classes]，标签中每个类别的像素点占总体的占比
-        fwavacc = (freq[freq > 0] * iou[freq > 0]).sum()    # 这个指标没看懂
+        # 加权综合IOU指标
+        weighted_integration_IOU = (freq[freq > 0] * iou[freq > 0]).sum()    # 计算一个综合的IOU，权重就是每种类别像素点在总体的占比。设计思想类似于F1，在P和R之间的调和
 
         # 5.各类别分别的iou
         cls_iou = dict(zip(range(self.num_classes), iou))
@@ -52,7 +53,7 @@ class eval_metrics(object):
         return {
                 "overall_ACC": acc,
                 "mean_ACC": acc_cls,
-                "FreqW_ACC": fwavacc,
+                "weighted_integration_IOU": weighted_integration_IOU,
                 "mean_IOU": mean_iou,
                 "class_IOU": cls_iou,
             }
