@@ -3,7 +3,6 @@ import numpy as np
 from PIL import Image
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import transforms as T
 import torchvision.utils as vutils
@@ -11,6 +10,7 @@ import torchvision.utils as vutils
 import config
 from utils import ext_transformer as et
 from utils import scheduler as scheduler
+from utils import metricsUtil as metricsUtil
 from dataset import split_dataset, HelenFace
 from model import load_model
 
@@ -63,9 +63,12 @@ if __name__ == '__main__':
     # 设置损失函数：本质上是分类问题，用交叉熵损失函数
     criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='mean')
 
+    # 设置验证集评估指标集
+    metric = metricsUtil.eval_metrics(config.num_classes)
+
     # 加载预训练模型
     curr_epoch = 0
-    # best_score = 0.0    # 以验证集的score算
+    best_score = 0.0    # 以验证集的mean_IOU算
     if len(config.pretrained_model) > 0 and os.path.isfile(config.pretrained_model):
         checkpoint = torch.load(config.pretrained_model, map_location=config.device)
 
@@ -77,7 +80,7 @@ if __name__ == '__main__':
             optimizer.load_state_dict(checkpoint["optimizer_state"])    # num_classes改变后不能接着上次训练
             scheduler.load_state_dict(checkpoint["scheduler_state"])
             curr_epoch = checkpoint["cur_itrs"]
-            # best_score = checkpoint['best_score']
+            best_score = checkpoint['best_score']
             print("Training state loaded from %s" % config.pretrained_model)
         print("Load pretrained model from %s" % config.pretrained_model)
         del checkpoint
@@ -120,8 +123,9 @@ if __name__ == '__main__':
         if curr_train_loss < train_loss:
             train_loss = curr_train_loss  # 更新保存的loss
 
-        eval_losses = []
+        eval_losses = []    # 统计验证集的损失
         model.eval()
+        metric.reset()    # 每轮训练完验证时都要重置混淆矩阵
         with torch.no_grad():
             for i, batch in enumerate(val_dataloader):
                 images, labels = batch[:]
@@ -137,6 +141,10 @@ if __name__ == '__main__':
                 preds = model(images)
                 loss = criterion(preds.view(-1, config.num_classes, h * w), labels)
                 eval_losses.append(loss.detach().cpu().numpy())
+
+                # 验证集采用mean_IOU衡量，直接用交叉熵损失不能真实的反映出语义分割的效果
+                metric.update(labels.cpu().numpy(), preds.detach().max(dim=1)[1].cpu().numpy())
+                val_score = metric.get_results()    # 获取统计的指标
 
                 if i < config.val_preview_num:    # 保存前val_preview_num张图像供预览
                     outputs = preds.max(1)[1][0]
@@ -172,14 +180,17 @@ if __name__ == '__main__':
         # 保存模型
         curr_eval_loss = np.mean(eval_losses)
         print("Epoch: %d, Batch: %d, train_loss: %.6f, eval_loss: %.6f" % (epoch, len(train_dataloader), curr_train_loss, curr_eval_loss))
-        if curr_eval_loss < eval_loss:
-            eval_loss = curr_eval_loss
+        # 输出验证集评估结果
+        print("\tDetails:", val_score)
+
+        if val_score['mean_IOU'] > best_score:    # 只有当前模型比之前best_score好时才保存
+            best_score = val_score['mean_IOU']
 
             torch.save({
                 "cur_itrs": epoch,
                 "model_state": model.module.state_dict() if config.use_gpu and config.num_gpu > 1 else model.state_dict(),    # 多GPU才有model.nodule结构
                 "optimizer_state": optimizer.state_dict(),
                 "scheduler_state": scheduler.state_dict(),
-                "best_score": 0.0
-            }, './checkpoint/faceseg_%d_%.6f_%.6f.pth' % (epoch, curr_train_loss, curr_eval_loss))
+                "best_score": best_score
+            }, './checkpoint/faceseg_%d_%.6f_%.6f_%.6f.pth' % (epoch, curr_train_loss, curr_eval_loss, best_score))
         scheduler.step()

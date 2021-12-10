@@ -11,7 +11,7 @@ anno_path = "F:/dataset/helen_face/labels/"
 resize = 513
 
 use_gpu = False    # 设置是否使用GPU
-device = torch.device('cuda:0' if torch.cuda.is_available() and use_gpu else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() and use_gpu else 'cpu')
 num_gpu = 1    # GPU个数
 random_seed = 1
 batch_size = 8
@@ -32,7 +32,7 @@ progress = True
 backbone = "mobilenetv2"    # backbone，可选 resnet50 或 mobilenetv2
 # pretrained_model = ""    # 预训练模型设为空，表示从头开始训练
 # pretrained_model = "./checkpoint/best_deeplabv3plus_resnet50_voc_os16.pth"    # backbone为resnet50的预训练模型
-pretrained_model = "./checkpoint/latest_deeplabv3plus_mobilenet_voc_os16_0.176498.pth"    # backbone为mobilenetv2的预训练模型
+pretrained_model = "./checkpoint/faceseg_13000_1.770241_0.577382.pth"    # backbone为mobilenetv2的预训练模型
 
 # backbone的预训练模型
 # model_urls = "https://download.pytorch.org/models/resnet50-19c8e357.pth"    # resnet

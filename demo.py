@@ -35,3 +35,44 @@ import numpy as np
 # img = np.where(img==255, 1, 0)
 # print(img.shape)
 # np.savetxt("./img1.txt", np.round(img), fmt='%.1f')
+
+# 计算语义分割任务的评价指标
+hist = np.arange(1, 10).reshape(3, 3)
+print(hist)
+
+# 1.总体acc
+acc = np.diag(hist).sum() / hist.sum()
+print("1.总体acc", acc)
+
+# 2.分类acc
+acc_cls = np.diag(hist) / hist.sum(axis=1)
+print(np.diag(hist))
+print(hist.sum(axis=1))    # 横向每行累加
+print("2.各类别acc", acc_cls)
+acc_cls = np.nanmean(acc_cls)
+print("3.各类别平均acc", acc_cls)
+
+# 3.iou
+print("hist.sum(axis=1):", hist.sum(axis=1))
+print("hist.sum(axis=0):", hist.sum(axis=0))
+print(np.diag(hist))
+iou = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
+print("3.iou", iou)
+mean_iou = np.nanmean(iou)
+print("4.各类平均iou", mean_iou)
+
+# 4.freq
+print(hist.sum(axis=1))
+print(hist.sum())
+freq = hist.sum(axis=1) / hist.sum()    #
+print("5.标签中每种类别的像素点占比", freq)
+print(freq[freq>0])    # 找出已识别到的类别
+print(iou[freq>0])    # 找出已识别到的类别中每类的iou
+print(freq[freq>0] * iou[freq>0])
+
+# fwavacc = (freq[freq > 0] * iou[freq > 0]).sum()
+# print(fwavacc)
+
+# 5.各类别分别的iou
+cls_iou = dict(zip(range(3), iou))
+print("6.各类别的分别iou", cls_iou)
