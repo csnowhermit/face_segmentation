@@ -37,6 +37,9 @@ def main():
         print("Please check your pretrained_modoel...")
         return
 
+    if config.use_gpu and torch.cuda.is_available():
+        model.cuda()    # 手动将model放到cuda上
+
     model.eval()
     for file in os.listdir(config.inference_imgpath):
         print("Processing... %s" % os.path.join(config.inference_imgpath, file))
@@ -61,7 +64,8 @@ def main():
         r_output = r_output.convert('RGB')
 
         # 拼接：原图、推理结果
-        show_img_list = [img[0] * 255., T.PILToTensor()(r_output) * 255.]
+        # show_img_list = [img[0] * 255., T.PILToTensor()(r_output) * 255.]
+        show_img_list = [img.detach().cpu()[0] * 255., T.PILToTensor()(r_output)]
 
         result_show = vutils.make_grid(show_img_list, nrow=1, padding=2, normalize=True).cpu()
 

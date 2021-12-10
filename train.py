@@ -160,7 +160,7 @@ if __name__ == '__main__':
                     # print(type(r_label), np.array(r_label).shape)
 
                     # 拼接：原图，标签，推理结果
-                    show_img_list = [images.detach().cpu().numpy()[0] * 255., T.PILToTensor()(r_label), T.PILToTensor()(r_output)]
+                    show_img_list = [images.detach().cpu()[0] * 255., T.PILToTensor()(r_label), T.PILToTensor()(r_output)]
 
                     label_show = vutils.make_grid(show_img_list, nrow=1, padding=2, normalize=True).cpu()
 
