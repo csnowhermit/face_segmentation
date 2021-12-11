@@ -88,9 +88,13 @@ if __name__ == '__main__':
         print("[!] Retrain")
         if config.use_gpu and config.num_gpu > 1:    # 允许使用GPU，才能使用多卡训练
             model = nn.DataParallel(model)
+            # DataParallel之后修改最后一层需用model.module.
+            model.module.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)  # 加载上预训练模型后再修改最后一层
+        else:    # 在CPU或单GPU下直接model.修改即可
+            model.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)  # 加载上预训练模型后再修改最后一层
         model.to(config.device)
 
-    model.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)  # 加载上预训练模型后再修改最后一层
+
 
     if os.path.exists("./checkpoint/") is False:
         os.makedirs("./checkpoint/")
