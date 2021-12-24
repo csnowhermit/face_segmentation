@@ -1,4 +1,5 @@
 import os
+import time
 import numpy as np
 from PIL import Image
 import torch
@@ -111,6 +112,7 @@ if __name__ == '__main__':
     val_loss_list = []
     for epoch in range(curr_epoch, config.total_epochs):
         model.train()
+        start = time.time()
         for i, batch in enumerate(train_dataloader):    # 批量加载数据训练
             images, labels = batch[:]
             images = images.to(config.device, dtype=torch.float32)    # [16, 3, 513, 513]
@@ -121,7 +123,8 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             output = model(images)    # [16, num_classes, 513, 513]
             loss = criterion(output.view(-1, config.num_classes, config.resize * config.resize), labels)
-            print("Epoch: %d, Batch: %d, train_loss: %.6f" % (epoch, i, loss))
+            print("Epoch: [%d/%d], Batch: [%d/%d], train_loss: %.6f, time: %.4f" % (epoch, config.total_epochs, i, len(train_dataloader), loss, time.time() - start))
+            start = time.time()
             loss.backward()
             optimizer.step()
 
@@ -134,6 +137,7 @@ if __name__ == '__main__':
         eval_losses = []    # 统计验证集的损失
         model.eval()
         metric.reset()    # 每轮训练完验证时都要重置混淆矩阵
+        val_start = time.time()    # 验证开始时间
         with torch.no_grad():
             for i, batch in enumerate(val_dataloader):
                 images, labels = batch[:]
@@ -188,7 +192,7 @@ if __name__ == '__main__':
         # 保存模型
         curr_eval_loss = np.mean(eval_losses)
         val_loss_list.append(curr_eval_loss)    # 验证集的损失用平均损失
-        print("Epoch: %d, Batch: %d, train_loss: %.6f, eval_loss: %.6f" % (epoch, len(train_dataloader), curr_train_loss, curr_eval_loss))
+        print("Epoch: %d, Batch: %d, train_loss: %.6f, eval_loss: %.6f, time: %.4f" % (epoch, len(train_dataloader), curr_train_loss, curr_eval_loss, time.time() - val_start))
         # 输出验证集评估结果
         print("\tDetails:", val_score)
 
