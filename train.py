@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import transforms as T
 import torchvision.utils as vutils
+import matplotlib.pyplot as plt
 
 import config
 from utils import ext_transformer as et
@@ -43,9 +44,9 @@ if __name__ == '__main__':
 
     # 这里使用backbone+deeplabv3+
     if config.backbone == 'resnet50':
-        model = load_model('resnet50', num_classes=9, output_stride=config.output_stride)
+        model = load_model('resnet50', num_classes=21, output_stride=config.output_stride)    # 从官方预训练模型开始finetune，num_classes要写21
     else:
-        model = load_model('mobilenetv2', num_classes=9, output_stride=config.output_stride)
+        model = load_model('mobilenetv2', num_classes=21, output_stride=config.output_stride)
 
     # backbone bn层设置动量
     for m in model.backbone.modules():
@@ -77,7 +78,7 @@ if __name__ == '__main__':
             model = nn.DataParallel(model)
         model.to(config.device)
         if config.continue_training:
-            optimizer.load_state_dict(checkpoint["optimizer_state"])    # num_classes改变后不能接着上次训练
+            optimizer.load_state_dict(checkpoint["optimizer_state"])    # num_classes改变后不能接着上次训练；从预训练模型开始不能接着上次训练
             scheduler.load_state_dict(checkpoint["scheduler_state"])
             curr_epoch = checkpoint["cur_itrs"]
             best_score = checkpoint['best_score']
@@ -86,15 +87,15 @@ if __name__ == '__main__':
         del checkpoint
     else:
         print("[!] Retrain")
-        if config.use_gpu and config.num_gpu > 1:    # 允许使用GPU，才能使用多卡训练
-            model = nn.DataParallel(model)
-            # DataParallel之后修改最后一层需用model.module.
-            model.module.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)  # 加载上预训练模型后再修改最后一层
-        else:    # 在CPU或单GPU下直接model.修改即可
-            model.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)  # 加载上预训练模型后再修改最后一层
-        model.to(config.device)
 
-
+    # 不管是finetune还是retrain，都需要修改模型的最后一层
+    if config.use_gpu and config.num_gpu > 1:    # 允许使用GPU，才能使用多卡训练
+        model = nn.DataParallel(model)
+        # DataParallel之后修改最后一层需用model.module.
+        model.module.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)  # 加载上预训练模型后再修改最后一层
+    else:    # 在CPU或单GPU下直接model.修改即可
+        model.classifier.classifier[3] = nn.Conv2d(256, config.num_classes, kernel_size=1, stride=1)  # 加载上预训练模型后再修改最后一层
+    model.to(config.device)
 
     if os.path.exists("./checkpoint/") is False:
         os.makedirs("./checkpoint/")
@@ -106,6 +107,8 @@ if __name__ == '__main__':
         model.cuda()    # 手动将model放到cuda上
 
     # 开始训练
+    train_loss_list = []
+    val_loss_list = []
     for epoch in range(curr_epoch, config.total_epochs):
         model.train()
         for i, batch in enumerate(train_dataloader):    # 批量加载数据训练
@@ -123,6 +126,7 @@ if __name__ == '__main__':
             optimizer.step()
 
         curr_train_loss = loss.detach().cpu().numpy()
+        train_loss_list.append(curr_train_loss)
         # 按训练集loss的更新保存
         if curr_train_loss < train_loss:
             train_loss = curr_train_loss  # 更新保存的loss
@@ -183,6 +187,7 @@ if __name__ == '__main__':
 
         # 保存模型
         curr_eval_loss = np.mean(eval_losses)
+        val_loss_list.append(curr_eval_loss)    # 验证集的损失用平均损失
         print("Epoch: %d, Batch: %d, train_loss: %.6f, eval_loss: %.6f" % (epoch, len(train_dataloader), curr_train_loss, curr_eval_loss))
         # 输出验证集评估结果
         print("\tDetails:", val_score)
@@ -198,3 +203,12 @@ if __name__ == '__main__':
                 "best_score": best_score
             }, './checkpoint/faceseg_%d_%.6f_%.6f_%.6f.pth' % (epoch, curr_train_loss, curr_eval_loss, best_score))
         scheduler.step()
+
+        if epoch >= 0:
+            plt.figure()
+            plt.subplot(121)
+            plt.plot(np.arange(0, len(train_loss_list)), train_loss_list)
+            plt.subplot(122)
+            plt.plot(np.arange(0, len(val_loss_list)), val_loss_list)
+            plt.savefig("metrics.jpg")
+            plt.close("all")

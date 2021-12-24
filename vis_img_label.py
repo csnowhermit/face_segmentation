@@ -18,8 +18,8 @@ colors = (colors % 255).numpy().astype("uint8")
 
 # 读取原图
 if __name__ == '__main__':
-    img_path = "F:/dataset/helen_face/images/"
-    lbl_path = "F:/dataset/helen_face/labels/"
+    img_path = "F:/dataset/CelebAMask-HQ/CelebA-HQ-img/"
+    lbl_path = "F:/dataset/CelebAMask-HQ/labels/"
     for file in os.listdir(img_path):
         if os.path.exists(os.path.join(lbl_path, file[0:-4] + ".png")) is False:
             continue
@@ -39,4 +39,4 @@ if __name__ == '__main__':
 
         label_show = vutils.make_grid(show_img_list, nrow=1, padding=2, normalize=True).cpu()
 
-        vutils.save_image(label_show, os.path.join("F:/dataset/helen_face/test", "eval_%s" % file))
+        vutils.save_image(label_show, os.path.join("F:/dataset/CelebAMask-HQ/test/", "eval_%s" % file))

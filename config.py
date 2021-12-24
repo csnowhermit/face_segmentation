@@ -5,9 +5,9 @@ import torch
 '''
 
 # 数据集相关
-num_classes = 9
-img_path = "F:/dataset/helen_face/images/"
-anno_path = "F:/dataset/helen_face/labels/"
+num_classes = 10
+img_path = "F:/dataset/CelebAMask-HQ/images/"
+anno_path = "F:/dataset/CelebAMask-HQ/labels/"
 resize = 513
 
 use_gpu = False    # 设置是否使用GPU
@@ -20,7 +20,7 @@ val_preview_num = 10    # val时保存多少张图像供预览
 learning_rate = 0.01
 weight_decay = 0.0001    # 权重衰减
 total_epochs = 30000    # 训练总的epochs数
-continue_training = True    # 是否接着上次的训练
+continue_training = False    # 是否接着上次的训练
 pre_frev = 10    # 每隔10个batch打印一次训练信息
 output_stride = 16
 val_results_path = "./results/"    # 验证集结果保存目录
@@ -32,7 +32,7 @@ progress = True
 backbone = "mobilenetv2"    # backbone，可选 resnet50 或 mobilenetv2
 # pretrained_model = ""    # 预训练模型设为空，表示从头开始训练
 # pretrained_model = "./checkpoint/best_deeplabv3plus_resnet50_voc_os16.pth"    # backbone为resnet50的预训练模型
-pretrained_model = "./checkpoint/faceseg_13000_1.770241_0.577382.pth"    # backbone为mobilenetv2的预训练模型
+pretrained_model = "./checkpoint/best_deeplabv3plus_mobilenet_voc_os16.pth"    # backbone为mobilenetv2的预训练模型
 
 # backbone的预训练模型
 # model_urls = "https://download.pytorch.org/models/resnet50-19c8e357.pth"    # resnet
